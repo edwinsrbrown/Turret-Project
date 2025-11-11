@@ -39,7 +39,7 @@ class Stepper:
     delay = 1200          # delay between motor steps [us]
     steps_per_degree = 4096/360    # 4096 steps/rev * 1/360 rev/deg
 
-    def __init__(self, shifter, lock):
+    def __init__(self, shifter, lock1, lock2):
         self.s = shifter           # shift register
         self.angle = 0             # current output shaft angle
         self.step_state = 0        # track position in sequence
