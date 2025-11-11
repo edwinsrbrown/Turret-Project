@@ -90,9 +90,10 @@ class Stepper:
 
     # Move relative angle from current position:
     def rotate(self, delta):
-        time.sleep(0.1)
-        p = multiprocessing.Process(target=self.__rotate, args=(delta,))
-        p.start()
+        #time.sleep(0.1)
+        #p = multiprocessing.Process(target=self.__rotate, args=(delta,))
+        #p.start()
+        self.__rotate(delta)
 
     # Move to an absolute angle taking the shortest possible path:
     def goAngle(self, angle):
@@ -123,6 +124,23 @@ if __name__ == '__main__':
     m1.zero()
     m2.zero()
 
+    p1 = multiprocessing.Process(target=m1.rotate, args=(-90,))
+    p1 = multiprocessing.Process(target=m1.rotate, args=(45,))
+    p1 = multiprocessing.Process(target=m1.rotate, args=(-90,))
+    p1 = multiprocessing.Process(target=m1.rotate, args=(45,))
+
+    p2 = multiprocessing.Process(target=m2.rotate, args=(180,))
+    p2 = multiprocessing.Process(target=m2.rotate, args=(-45,))
+    p2 = multiprocessing.Process(target=m2.rotate, args=(45,))
+    p2 = multiprocessing.Process(target=m2.rotate, args=(-90,))
+
+    p1.start()
+    p2.start()
+
+    p1.join()
+    p2.join()
+    
+    """
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
     m1.rotate(-90)
@@ -136,7 +154,7 @@ if __name__ == '__main__':
     m2.rotate(-45)
     m2.rotate(45)
     m2.rotate(-90)
- 
+    """
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
     try:
