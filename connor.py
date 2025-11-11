@@ -49,7 +49,7 @@ class Stepper:
         Stepper.num_steppers += 1   # increment the instance count
 
     # Signum function:
-    def __sgn(self, x):
+        def __sgn(self, x):
         if x == 0: return(0)
         else: return(int(abs(x)/x))
 """
@@ -63,7 +63,6 @@ class Stepper:
         self.angle += dir/Stepper.steps_per_degree
         self.angle %= 360         # limit to [0,359.9+] range
 """
-#--------------------------------
     def __step(self, dir):
         # 1. Update the internal step state
         self.step_state += dir
