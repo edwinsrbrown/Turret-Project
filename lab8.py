@@ -86,7 +86,7 @@ class Stepper:
         for s in range(numSteps):      # take the steps
             self.__step(dir)
             time.sleep(Stepper.delay/1e6)
-        self.lock.release()
+        # self.lock.release()
 
     # Move relative angle from current position:
     def rotate(self, delta):
