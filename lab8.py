@@ -39,13 +39,12 @@ class Stepper:
     delay = 1200          # delay between motor steps [us]
     steps_per_degree = 4096/360    # 4096 steps/rev * 1/360 rev/deg
 
-    def __init__(self, shifter, lock1, lock2):
+    def __init__(self, shifter, lock):
         self.s = shifter           # shift register
         self.angle = 0             # current output shaft angle
         self.step_state = 0        # track position in sequence
         self.shifter_bit_start = 4*Stepper.num_steppers  # starting bit position
-        self.lock = lock1
-        self.lock = lock2          # multiprocessing lock
+        self.lock = lock         # multiprocessing lock
 
         Stepper.num_steppers += 1   # increment the instance count
 
@@ -86,9 +85,7 @@ class Stepper:
 
     # Move relative angle from current position:
     def rotate(self, delta):
-        time.sleep(0.1)
-        p = multiprocessing.Process(target=self.__rotate, args=(delta,))
-        p.start()
+        self.__rotate(delta)
 
     # Move to an absolute angle taking the shortest possible path:
     def goAngle(self, angle):
@@ -121,18 +118,21 @@ if __name__ == '__main__':
     
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
-    m1.rotate(-90)
-    m1.rotate(45)
-    m1.rotate(-90)
-    m1.rotate(45)
+    m1_moves = [-90, 45, -90, 45]
+    m2_moves = [180, -45, 45, -90]
 
     # If separate multiprocessing.lock objects are used, the second motor
     # will run in parallel with the first motor:
-    m2.rotate(180)
-    m2.rotate(-45)
-    m2.rotate(45)
-    m2.rotate(-90)
-    
+    for moves1, moves2 in zip(m1_moves, m2_moves):
+        p1 = multiprocessing.Process(target=m1.rotate, args=(moves1,))
+        p2 = multiprocessing.Process(target=m2.rotate, args=(moves2,))
+        
+        p1.start()
+        p2.start()
+        
+        p1.join()
+        p2.join()
+
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
     try:
