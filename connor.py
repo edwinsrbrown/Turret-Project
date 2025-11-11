@@ -49,7 +49,7 @@ class Stepper:
         Stepper.num_steppers += 1   # increment the instance count
 
     # Signum function:
-        def __sgn(self, x):
+    def __sgn(self, x):
         if x == 0: return(0)
         else: return(int(abs(x)/x))
 """
