@@ -63,6 +63,7 @@ class Stepper:
         self.angle += dir/Stepper.steps_per_degree
         self.angle %= 360         # limit to [0,359.9+] range
 """
+# Move a single +/-1 step in the motor sequence:
     def __step(self, dir):
         # 1. Update the internal step state
         self.step_state += dir
@@ -89,17 +90,6 @@ class Stepper:
         # NOTE: This assumes you've implemented Step 1 from the solution to Q3
         self.angle.value += dir / Stepper.steps_per_degree 
         self.angle.value %= 360 # limit to [0,359.9+] range
-  
-    # Move relative angle from current position:
-    def __rotate(self, delta):
-        self.lock.acquire()                 # wait until the lock is available
-        numSteps = int(Stepper.steps_per_degree * abs(delta))    # find the right # of steps
-        dir = self.__sgn(delta)        # find the direction (+/-1)
-        for s in range(numSteps):      # take the steps
-            self.__step(dir)
-            time.sleep(Stepper.delay/1e6)
-        self.lock.release()
-
 #--------------------------------
 
     # Move relative angle from current position:
