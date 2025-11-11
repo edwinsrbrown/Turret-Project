@@ -59,14 +59,9 @@ class Stepper:
         self.step_state %= 8      # ensure result stays in [0,7]
         
         # new code: for sequential motor use
-        self.lock.acquire()
-        try:
-            Stepper.shifter_outputs &= ~(0b1111<<self.shifter_bit_start)
-            Stepper.shifter_outputs |= Stepper.seq[self.step_state]<<self.shifter_bit_start
-            self.s.shiftByte(Stepper.shifter_outputs)
-
-        finally:
-            self.lock.release()
+        Stepper.shifter_outputs &= ~(0b1111<<self.shifter_bit_start)
+        Stepper.shifter_outputs |= Stepper.seq[self.step_state]<<self.shifter_bit_start
+        self.s.shiftByte(Stepper.shifter_outputs)
         
         """
         # original code: for non-sequential motor use
@@ -80,20 +75,19 @@ class Stepper:
 
     # Move relative angle from current position:
     def __rotate(self, delta):
-        # self.lock.acquire()                 # wait until the lock is available
+        self.lock.acquire()                 # wait until the lock is available
         numSteps = int(Stepper.steps_per_degree * abs(delta))    # find the right # of steps
         dir = self.__sgn(delta)        # find the direction (+/-1)
         for s in range(numSteps):      # take the steps
             self.__step(dir)
             time.sleep(Stepper.delay/1e6)
-        # self.lock.release()
+        self.lock.release()
 
     # Move relative angle from current position:
     def rotate(self, delta):
-        #time.sleep(0.1)
-        #p = multiprocessing.Process(target=self.__rotate, args=(delta,))
-        #p.start()
-        self.__rotate(delta)
+        time.sleep(0.1)
+        p = multiprocessing.Process(target=self.__rotate, args=(delta,))
+        p.start()
 
     # Move to an absolute angle taking the shortest possible path:
     def goAngle(self, angle):
@@ -123,24 +117,7 @@ if __name__ == '__main__':
     # Zero the motors:
     m1.zero()
     m2.zero()
-
-    p1 = multiprocessing.Process(target=m1.rotate, args=(-90,))
-    p1 = multiprocessing.Process(target=m1.rotate, args=(45,))
-    p1 = multiprocessing.Process(target=m1.rotate, args=(-90,))
-    p1 = multiprocessing.Process(target=m1.rotate, args=(45,))
-
-    p2 = multiprocessing.Process(target=m2.rotate, args=(180,))
-    p2 = multiprocessing.Process(target=m2.rotate, args=(-45,))
-    p2 = multiprocessing.Process(target=m2.rotate, args=(45,))
-    p2 = multiprocessing.Process(target=m2.rotate, args=(-90,))
-
-    p1.start()
-    p2.start()
-
-    p1.join()
-    p2.join()
     
-    """
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
     m1.rotate(-90)
@@ -154,7 +131,7 @@ if __name__ == '__main__':
     m2.rotate(-45)
     m2.rotate(45)
     m2.rotate(-90)
-    """
+    
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
     try:
