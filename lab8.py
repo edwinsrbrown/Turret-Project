@@ -64,7 +64,7 @@ class Stepper:
         self.angle %= 360         # limit to [0,359.9+] range
 
     # Move relative angle from current position:
-    def __rotate(self, delta):
+    def __rotate(self, delta, lock):
         self.lock.acquire()                 # wait until the lock is available
         numSteps = int(Stepper.steps_per_degree * abs(delta))    # find the right # of steps
         dir = self.__sgn(delta)        # find the direction (+/-1)
@@ -75,12 +75,9 @@ class Stepper:
 
     # Move relative angle from current position:
     def rotate(self, delta):
-        lock.acquire()
         time.sleep(0.1)
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
-        p.join()
-        lock.release()
 
     # Move to an absolute angle taking the shortest possible path:
     def goAngle(self, angle):
@@ -112,19 +109,20 @@ if __name__ == '__main__':
 
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
-
+    self.lock.acquire()
     m1.rotate(-90)
     m1.rotate(45)
     m1.rotate(-90)
     m1.rotate(45)
-
+    self.lock.release()
     # If separate multiprocessing.lock objects are used, the second motor
     # will run in parallel with the first motor:
+    self.lock.acquire()
     m2.rotate(180)
     m2.rotate(-45)
     m2.rotate(45)
     m2.rotate(-90)
- 
+    self.lock.release()
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
     try:
