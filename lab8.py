@@ -61,8 +61,8 @@ class Stepper:
             x = Stepper.shifter_outputs.value
             x &= ~(0b1111<<self.shifter_bit_start)
             x |= (Stepper.seq[self.step_state]<<self.shifter_bit_start)
-            Stepper.shifter_outputs.value = val
-            self.s.shiftByte(val)
+            Stepper.shifter_outputs.value = x
+            self.s.shiftByte(x)
 
         self.angle = (self.angle + dir / Stepper.steps_per_degree) % 360
             
