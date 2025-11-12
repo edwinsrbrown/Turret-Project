@@ -60,7 +60,7 @@ class Stepper:
         with self.lock:
             Stepper.shifter_outputs &= ~(0b1111<<self.shifter_bit_start)
             Stepper.shifter_outputs |= Stepper.seq[self.step_state]<<self.shifter_bit_start
-            self.s.shiftByte(Stepper.shifter_outputs.value)
+            self.s.shiftByte(Stepper.shifter_outputs)
         self.angle += dir/Stepper.steps_per_degree
         self.angle %= 360         # limit to [0,359.9+] range
 
