@@ -121,12 +121,12 @@ if __name__ == '__main__':
 
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
-   """
+    """
     m1.rotate(-90)
     m1.rotate(45)
     m1.rotate(-90)
     m1.rotate(45)
-"""
+    """
     m1.goAngle(-90)
     m1.goAngle(45)
     m1.goAngle(-90)
