@@ -97,12 +97,11 @@ if __name__ == '__main__':
 
     # Use multiprocessing.Lock() to prevent motors from trying to 
     # execute multiple operations at the same time:
-    lock1 = multiprocessing.Lock()
-    lock2 = multiprocessing.Lock()
+    lock = multiprocessing.Lock()
 
     # Instantiate 2 Steppers:
-    m1 = Stepper(s, lock1)
-    m2 = Stepper(s, lock2)
+    m1 = Stepper(s, lock)
+    m2 = Stepper(s, lock)
 
     # Zero the motors:
     m1.zero()
@@ -112,17 +111,17 @@ if __name__ == '__main__':
     # step ends:
    
     m1.rotate(-90)
-    m1.rotate(45)
-    m1.rotate(-90)
-    m1.rotate(45)
+ #   m1.rotate(45)
+ #   m1.rotate(-90)
+ #   m1.rotate(45)
     
     # If separate multiprocessing.lock objects are used, the second motor
     # will run in parallel with the first motor:
     
     m2.rotate(180)
-    m2.rotate(-45)
-    m2.rotate(45)
-    m2.rotate(-90)
+  #  m2.rotate(-45)
+   # m2.rotate(45)
+   # m2.rotate(-90)
     
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
