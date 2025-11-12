@@ -109,20 +109,20 @@ if __name__ == '__main__':
 
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
-    self.lock.acquire()
+   
     m1.rotate(-90)
     m1.rotate(45)
     m1.rotate(-90)
     m1.rotate(45)
-    self.lock.release()
+    
     # If separate multiprocessing.lock objects are used, the second motor
     # will run in parallel with the first motor:
-    self.lock.acquire()
+    
     m2.rotate(180)
     m2.rotate(-45)
     m2.rotate(45)
     m2.rotate(-90)
-    self.lock.release()
+    
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
     try:
