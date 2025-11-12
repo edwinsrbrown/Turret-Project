@@ -65,14 +65,13 @@ class Stepper:
 
     # Move relative angle from current position:
     def __rotate(self, delta):
-       # self.lock.acquire()                 # wait until the lock is available
+        lock.acquire()                 # wait until the lock is available
         numSteps = int(Stepper.steps_per_degree * abs(delta))    # find the right # of steps
         dir = self.__sgn(delta)        # find the direction (+/-1)
         for s in range(numSteps):      # take the steps
-            with self.lock:
-                self.__step(dir)
+            self.__step(dir)
             time.sleep(Stepper.delay/1e6)
-       # self.lock.release()
+        lock.release()
 
     # Move relative angle from current position:
     def rotate(self, delta):
@@ -98,7 +97,8 @@ if __name__ == '__main__':
 
     # Use multiprocessing.Lock() to prevent motors from trying to 
     # execute multiple operations at the same time:
-    lock = multiprocessing.Lock()
+    lock1 = multiprocessing.Lock()
+    lock2 = multiprocessing.Lock()
 
     # Instantiate 2 Steppers:
     m1 = Stepper(s, lock)
