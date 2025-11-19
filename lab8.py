@@ -124,7 +124,7 @@ if __name__ == '__main__':
     m2.zero()
 
     
-    m1.goAngle(-45)
+    m1.goAngle(45)
     """
     m1.goAngle(45)
     m1.goAngle(-90)
