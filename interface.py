@@ -3,22 +3,25 @@ import RPi.GPIO as GPIO
 
 #Parse Function
 def parsePOSTdata(data):
-    data_dict = {}
-    idx = data.find('\r\n\r\n')+4
-    data = data[idx:]
-    data_pairs = data.split('&')
-    for pair in data_pairs:
-        key_val = pair.split('=')
-        if len(key_val) == 2:
-            data_dict[key_val[0]] = key_val[1]
-    return data_dict
+  data_dict = {}
+  idx = data.find('\r\n\r\n')+4
+  data = data[idx:]
+  data_pairs = data.split('&')
+  
+  for pair in data_pairs:
+    key_val = pair.split('=')
+    if len(key_val) == 2:
+      data_dict[key_val[0]] = key_val[1]
+
+  return data_dict
 
 POWER = False
 PORT = 8080
 
 POWER_PIN = 4
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(POWER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(POWER_PIN, GPIO.OUT)
+GPIO.output(POWER_PIN, GPIO.LOW)
 
 class PowerHandler(BaseHTTPRequestHandler):
   
@@ -29,11 +32,11 @@ class PowerHandler(BaseHTTPRequestHandler):
 
     if POWER = True:
       status_text = "ON"
-      button_label = "Turn Off"
+      button_label = "TURN OFF"
 
     else:
       status_text = "OFF"
-      button_label = "Turn On"
+      button_label = "TURN ON"
 
     html_content = f"""
 
@@ -53,19 +56,51 @@ class PowerHandler(BaseHTTPRequestHandler):
 </html>
 """
     return html_content
+
   def do_GET(self):
     self.send_response(200)
     self.send_header("Content-type", "text/html")
     self.end_headers()
-    self.wfile.write(self._generate_html().encade("utf-8"))
+    self.wfile.write(self._generate_html().encode("utf-8"))
 
   def do_POST(self):
+    global POWER
+    global POWER_PIN
+    
+      
+      
     content_length = int(self.headers['Content-Length'])
     post_data_raw = self.rfile.read(content_length).decode('utf-8')
+    parsed_data = parsePOSTdata(post_data_raw)
+
+    if 'toggle_taction' in parsed_data:
+      POWER = not POWER_PIN
+
+      if POWER = True:
+        GPIO.output(POWER_PIN, GPIO.HIGH)
+      else:
+        GPIO.OUTPUT(POWER_PIN, GPIO.LOW)
 
     self.send_response(303)
     self.send_header('Location', '/')
     self.end_headers()
 
 def run_server():
-  server_address = ('', PORT)
+    server_address = ('', PORT)
+    httpd = HTTPServer(server_address, SimpleControlHandler)
+    
+    try:
+        print(f"Starting Pi Control Server on http://<Pi-IP-Address>:{PORT}")
+        print("Press Ctrl+C to stop the server.")
+        httpd.serve_forever()
+        
+    except KeyboardInterrupt:
+        print("\nServer stopping...")
+    
+    finally:
+        # CRUCIAL: Clean up GPIO settings when the script exits
+        GPIO.cleanup() 
+        print("GPIO cleaned up and pins reset.")
+
+if __name__ == '__main__':
+    run_server()
