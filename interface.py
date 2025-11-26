@@ -30,7 +30,7 @@ class PowerHandler(BaseHTTPRequestHandler):
     global POWER_PIN
     POWER=GPIO.input(POWER_PIN)
 
-    if POWER == True:
+    if POWER = True:
       status_text = "ON"
       button_label = "TURN OFF"
 
@@ -76,7 +76,7 @@ class PowerHandler(BaseHTTPRequestHandler):
     if 'toggle_taction' in parsed_data:
       POWER = not POWER_PIN
 
-      if POWER == True:
+      if POWER = True:
         GPIO.output(POWER_PIN, GPIO.HIGH)
       else:
         GPIO.OUTPUT(POWER_PIN, GPIO.LOW)
@@ -87,7 +87,7 @@ class PowerHandler(BaseHTTPRequestHandler):
 
 def run_server():
     server_address = ('', PORT)
-    httpd = HTTPServer(server_address, SimpleControlHandler)
+    httpd = HTTPServer(server_address, PowerHandler)
     
     try:
         print(f"Starting Pi Control Server on http://<Pi-IP-Address>:{PORT}")
