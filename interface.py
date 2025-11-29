@@ -72,10 +72,12 @@ class PowerHandler(BaseHTTPRequestHandler):
     if 'toggle_action' in parsed_data:
       POWER = not POWER
 
+      print("POWER IS NOW:", POWER)
+
       if POWER:
-        GPIO.output(POWER_PIN, GPIO.HIGH)
+        #GPIO.output(POWER_PIN, GPIO.HIGH)
       else:
-        GPIO.output(POWER_PIN, GPIO.LOW)
+        #GPIO.output(POWER_PIN, GPIO.LOW)
 
     self.send_response(303)
     self.send_header('Location', '/')
