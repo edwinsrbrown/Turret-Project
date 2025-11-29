@@ -4,8 +4,6 @@ import RPi.GPIO as GPIO
 #Parse Function
 def parsePOSTdata(data):
   data_dict = {}
-  idx = data.find('\r\n\r\n')+4
-  data = data[idx:]
   data_pairs = data.split('&')
   
   for pair in data_pairs:
