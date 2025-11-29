@@ -28,8 +28,6 @@ class PowerHandler(BaseHTTPRequestHandler):
   
   def _generate_html(self):
     global POWER
-    global POWER_PIN
-    POWER=GPIO.input(POWER_PIN)
 
     if POWER:
       status_text = "ON"
@@ -66,7 +64,6 @@ class PowerHandler(BaseHTTPRequestHandler):
 
   def do_POST(self):
     global POWER
-    global POWER_PIN
     
     content_length = int(self.headers.get('Content-Length', 0))
     post_data_raw = self.rfile.read(content_length).decode('utf-8')
