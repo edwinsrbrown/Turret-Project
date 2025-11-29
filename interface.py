@@ -74,9 +74,9 @@ class PowerHandler(BaseHTTPRequestHandler):
 
       print("POWER IS NOW:", POWER)
 
-      if POWER:
+      #if POWER:
         #GPIO.output(POWER_PIN, GPIO.HIGH)
-      else:
+      #else:
         #GPIO.output(POWER_PIN, GPIO.LOW)
 
     self.send_response(303)
