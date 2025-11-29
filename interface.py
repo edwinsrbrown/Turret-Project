@@ -15,13 +15,14 @@ def parsePOSTdata(data):
 
   return data_dict
 
-POWER = False
 PORT = 8080
-
 POWER_PIN = 4
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(POWER_PIN, GPIO.OUT)
 GPIO.output(POWER_PIN, GPIO.LOW)
+
+POWER = GPIO.input(POWER_PIN)
 
 class PowerHandler(BaseHTTPRequestHandler):
   
@@ -30,7 +31,7 @@ class PowerHandler(BaseHTTPRequestHandler):
     global POWER_PIN
     POWER=GPIO.input(POWER_PIN)
 
-    if POWER == True:
+    if POWER:
       status_text = "ON"
       button_label = "TURN OFF"
 
@@ -67,19 +68,17 @@ class PowerHandler(BaseHTTPRequestHandler):
     global POWER
     global POWER_PIN
     
-      
-      
-    content_length = int(self.headers['Content-Length'])
+    content_length = int(self.headers['Content-Length', 0])
     post_data_raw = self.rfile.read(content_length).decode('utf-8')
     parsed_data = parsePOSTdata(post_data_raw)
 
-    if 'toggle_taction' in parsed_data:
-      POWER = not POWER_PIN
+    if 'toggle_action' in parsed_data:
+      POWER = not POWER
 
-      if POWER == True:
+      if POWER:
         GPIO.output(POWER_PIN, GPIO.HIGH)
       else:
-        GPIO.OUTPUT(POWER_PIN, GPIO.LOW)
+        GPIO.output(POWER_PIN, GPIO.LOW)
 
     self.send_response(303)
     self.send_header('Location', '/')
@@ -90,7 +89,7 @@ def run_server():
     httpd = HTTPServer(server_address, PowerHandler)
     
     try:
-        print(f"Starting Pi Control Server on http://<Pi-IP-Address>:{PORT}")
+        print(f"Starting Pi Control Server on http://172.20.10.2:{PORT}")
         print("Press Ctrl+C to stop the server.")
         httpd.serve_forever()
         
