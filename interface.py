@@ -44,7 +44,7 @@ class PowerHandler(BaseHTTPRequestHandler):
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Power Control</title>
+  <title>Turret Project</title>
 </head>
 <body>
   <h1>Device Status: <b>{status_text}</b></h1> 
@@ -68,7 +68,7 @@ class PowerHandler(BaseHTTPRequestHandler):
     global POWER
     global POWER_PIN
     
-    content_length = int(self.headers['Content-Length', 0])
+    content_length = int(self.headers.get('Content-Length', 0))
     post_data_raw = self.rfile.read(content_length).decode('utf-8')
     parsed_data = parsePOSTdata(post_data_raw)
 
