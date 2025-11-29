@@ -93,7 +93,6 @@ def run_server():
         print("\nServer stopping...")
     
     finally:
-        # CRUCIAL: Clean up GPIO settings when the script exits
         GPIO.cleanup() 
         print("GPIO cleaned up and pins reset.")
 
