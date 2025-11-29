@@ -63,26 +63,18 @@ class PowerHandler(BaseHTTPRequestHandler):
   def do_POST(self):
     global POWER
 
-    print("✅ POST RECEIVED")   # <-- THIS MUST PRINT NO MATTER WHAT
-
     content_length = int(self.headers.get('Content-Length', 0))
     post_data_raw = self.rfile.read(content_length).decode('utf-8')
 
-    print("RAW POST:", repr(post_data_raw))
-
     parsed_data = parsePOSTdata(post_data_raw)
-    print("PARSED DATA:", parsed_data)
 
     if 'toggle_action' in parsed_data:
         POWER = not POWER
-        print("✅ POWER TOGGLED →", POWER)
 
         if POWER:
             GPIO.output(POWER_PIN, GPIO.HIGH)
         else:
             GPIO.output(POWER_PIN, GPIO.LOW)
-    else:
-        print("❌ TOGGLE KEY NOT FOUND")
 
     self.send_response(303)
     self.send_header('Location', '/')
