@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# turret_server.py
-# Integrated HTTP + Stepper control for ENME441 Turret Project
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.request # Kept for the autonomous JSON fetch
 import RPi.GPIO as GPIO
