@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# turret_server.py
-# Integrated HTTP + Stepper control for ENME441 Turret Project
-#
-# LR = Left/Right  = azimuth
-# UD = Up/Down     = altitude
-#
-# Synchronous stepper control (no multiprocessing)
-
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 import urllib.request
