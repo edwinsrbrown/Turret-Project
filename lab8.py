@@ -100,10 +100,6 @@ def normalize_deg(a):
     return a
 
 def compute_target_angles(my_r, my_theta, target_r, target_theta, target_z=0.0, turret_height=0.0):
-    # 1. Azimuth (Left/Right)
-    # Simple polar approximation or Law of Cosines if needed. 
-    # For a circle of turrets facing inward, the logic depends on orientation.
-    # Assuming standard polar grid:
     
     # Calculate vector to target relative to me
     my_x = my_r * math.cos(my_theta)
@@ -115,13 +111,13 @@ def compute_target_angles(my_r, my_theta, target_r, target_theta, target_z=0.0, 
     dx = target_x - my_x
     dy = target_y - my_y
     
-    # Absolute angle to target
+    # abs angle to target
     abs_angle_rad = math.atan2(dy, dx)
     
-    # Convert to degrees and normalize
+    # convert rad to degrees
     lr_cmd = normalize_deg(deg_from_rad(abs_angle_rad))
     
-    # 2. Altitude (Up/Down)
+    # up/down control
     dist_horiz = math.sqrt(dx**2 + dy**2)
     dist_horiz = max(dist_horiz, 1e-6) # prevent div by zero
     
