@@ -1,37 +1,28 @@
+#!/usr/bin/env python3
+# turret_server.py
+# Integrated HTTP + Stepper control for ENME441 Turret Project
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import parse_qs
-import urllib.request
+import urllib.request # Kept for the autonomous JSON fetch
+import RPi.GPIO as GPIO
 import json
 import time
 import math
-
-# Raspberry Pi GPIO
-try:
-    import RPi.GPIO as GPIO
-except Exception:
-    class DummyGPIO:
-        BCM = BOARD = OUT = IN = LOW = HIGH = None
-        def setmode(self, *a, **k): pass
-        def setup(self, *a, **k): pass
-        def output(self, *a, **k): pass
-        def input(self, *a, **k): return False
-        def cleanup(self): pass
-    GPIO = DummyGPIO()
-
 from shifter import Shifter
 
+def parsePOSTdata(data):
+    data_dict = {}
+    data_pairs = data.split('&')
+    for pair in data_pairs:
+        key_val = pair.split('=')
+        if len(key_val) == 2:
+            data_dict[key_val[0]] = key_val[1]
+    return data_dict
 
-# ---------- POST parsing ----------
-def parsePOSTdata(raw):
-    qs = parse_qs(raw, keep_blank_values=True)
-    return {k: v[0] for k, v in qs.items()}
-
-
-# ---------- Stepper class (synchronous) ----------
 class Stepper:
-    seq = [0b0001,0b0011,0b0010,0b0110,0b0100,0b1100,0b1000,0b1001]  # CCW sequence
+    seq = [0b0001,0b0011,0b0010,0b0110,0b0100,0b1100,0b1000,0b1001]
     delay_us = 1200
-    steps_per_degree = 4096/360.0
+    steps_per_degree = 1024/360.0
 
     def __init__(self, shifter, shifter_bit_start):
         self.s = shifter
@@ -84,10 +75,8 @@ class Stepper:
         reg |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
         self._set_register(reg)
 
-
-# ---------- GPIO + hardware setup ----------
 PORT = 8080
-POWER_PIN = 4  # Laser pin
+POWER_PIN = 4 #for laser
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(POWER_PIN, GPIO.OUT)
@@ -95,7 +84,6 @@ GPIO.output(POWER_PIN, GPIO.LOW)
 
 LASER_ON = False
 
-# Shifter setup (update pins if needed)
 SHIFTER_DATA = 16
 SHIFTER_LATCH = 20
 SHIFTER_CLOCK = 21
@@ -103,7 +91,6 @@ SHIFTER_CLOCK = 21
 shifter = Shifter(data=SHIFTER_DATA, latch=SHIFTER_LATCH, clock=SHIFTER_CLOCK)
 
 # ---------- MOTOR BIT POSITIONS ----------
-# Adjust these if motors are wired differently
 m_lr = Stepper(shifter, shifter_bit_start=4)   # Left/Right (azimuth)
 m_ud = Stepper(shifter, shifter_bit_start=0)   # Up/Down (altitude)
 
@@ -159,18 +146,8 @@ class TurretHandler(BaseHTTPRequestHandler):
 <head>
   <meta charset="utf-8"/>
   <title>Turret Control</title>
-  <style>
-    body {{ font-family: Arial; padding: 20px; }}
-    .card {{ max-width: 640px; padding: 16px; border-radius: 8px;
-             box-shadow: 0 0 8px rgba(0,0,0,0.1); }}
-    label {{ display:block; margin-top:10px; }}
-    input[type=range] {{ width:100%; }}
-    .row {{ display:flex; gap:10px; margin-top:10px; }}
-    button {{ padding:8px 12px; }}
-  </style>
 </head>
 <body>
-  <div class="card">
     <h1>Turret Control</h1>
     <p><b>Laser:</b> {laser_status}</p>
 
@@ -185,15 +162,15 @@ class TurretHandler(BaseHTTPRequestHandler):
       <label>Left / Right (deg): <span id="lrdisp">{lr}</span></label>
       <input id="lr" name="lr_deg" type="range" min="0" max="359.9" step="0.1"
              value="{lr}" oninput="document.getElementById('lrdisp').innerText=this.value"/>
+      <br><br>
 
       <label>Up / Down (deg): <span id="uddisp">{ud}</span></label>
       <input id="ud" name="ud_deg" type="range" min="-90" max="90" step="0.1"
              value="{ud}" oninput="document.getElementById('uddisp').innerText=this.value"/>
+      <br><br>
 
-      <div class="row">
-        <button name="action" value="move_angles">Move to Angles</button>
-        <button name="action" value="zero_motors">Zero Motors</button>
-      </div>
+      <button name="action" value="move_angles">Move to Angles</button>
+      <button name="action" value="zero_motors">Zero Motors</button>
     </form>
 
     <hr>
@@ -203,17 +180,16 @@ class TurretHandler(BaseHTTPRequestHandler):
       <label>positions.json URL:
         <input type="text" name="json_url" value="http://192.168.1.254:8000/positions.json" size="50"/>
       </label>
+      <br><br>
       <label>Your team number:
         <input type="text" name="team_id" value="1" size="6"/>
       </label>
-      <div class="row">
-        <button name="action" value="start_autonomous">Start Autonomous</button>
-      </div>
+      <br><br>
+      <button name="action" value="start_autonomous">Start Autonomous</button>
     </form>
 
     <hr>
-    <p style="color:green;">{msg}</p>
-  </div>
+    <p>{msg}</p>
 </body>
 </html>
 """
@@ -230,6 +206,8 @@ class TurretHandler(BaseHTTPRequestHandler):
 
         length = int(self.headers.get('Content-Length',0))
         raw = self.rfile.read(length).decode('utf-8')
+        
+        # Uses the new manual parsing function
         data = parsePOSTdata(raw)
 
         action = data.get('action',"")
@@ -246,7 +224,7 @@ class TurretHandler(BaseHTTPRequestHandler):
             try:
                 lr = float(data.get("lr_deg", m_lr.angle))
                 ud = float(data.get("ud_deg", m_ud.angle))
-                msg = f"Moving to LR={lr}°, UD={ud}°..."
+                msg = f"Moving to LR={lr}, UD={ud}..."
                 m_lr.go_angle(lr)
                 m_ud.go_angle(ud)
                 msg += " done."
@@ -267,6 +245,7 @@ class TurretHandler(BaseHTTPRequestHandler):
                 url = data.get("json_url","")
                 team = str(int(data.get("team_id","1")))
 
+                # Still requires urllib.request for the GET
                 with urllib.request.urlopen(url) as r:
                     j = json.loads(r.read().decode('utf-8'))
 
@@ -309,7 +288,6 @@ class TurretHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type","text/html")
         self.end_headers()
         self.wfile.write(self._generate_html(msg).encode("utf-8"))
-
 
 
 # ---------- Run server ----------
