@@ -115,10 +115,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 
     def _generate_html(self, msg=""):
         lr = round(m_lr.angle, 1)
-        raw_ud = m_ud.angle
-        if raw_ud > 180:
-            raw_ud -= 360
-        ud = round(raw_ud, 1)
+        ud = round(m_ud.angle, 1)
         laser_status = "ON" if LASER_ON else "OFF"
 
         html = f"""
