@@ -18,7 +18,7 @@ def parsePOSTdata(data):
 class Stepper:
     seq = [0b0001,0b0011,0b0010,0b0110,0b0100,0b1100,0b1000,0b1001]
     delay_us = 1200
-    steps_per_degree = 2048/360.0
+    steps_per_degree = 1024/360.0
     _shared_register = 0 
 
     def __init__(self, shifter, shifter_bit_start):
