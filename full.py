@@ -4,6 +4,7 @@ import RPi.GPIO as GPIO
 import json
 import time
 import math
+from shifter import Shifter
 
 # -------------------------------------------------
 # USER'S PARSE FUNCTION (UNMODIFIED)
@@ -20,9 +21,9 @@ def parsePOSTdata(data):
 # -------------------------------------------------
 # CONFIG
 # -------------------------------------------------
-DATA_PIN = 17
-LATCH_PIN = 27
-CLOCK_PIN = 22
+DATA_PIN = 16
+LATCH_PIN = 20
+CLOCK_PIN = 21
 
 LASER_PIN = 23
 
@@ -39,24 +40,6 @@ GPIO.setup(CLOCK_PIN, GPIO.OUT)
 
 GPIO.setup(LASER_PIN, GPIO.OUT)
 GPIO.output(LASER_PIN, GPIO.LOW)
-
-# -------------------------------------------------
-# SHIFT REGISTER + STEPPERS
-# -------------------------------------------------
-class Shifter:
-    def __init__(self, data, latch, clock):
-        self.data = data
-        self.latch = latch
-        self.clock = clock
-
-    def send_byte(self, val):
-        GPIO.output(self.latch, GPIO.LOW)
-        for i in range(8):
-            bit = (val >> (7 - i)) & 1
-            GPIO.output(self.data, bit)
-            GPIO.output(self.clock, GPIO.HIGH)
-            GPIO.output(self.clock, GPIO.LOW)
-        GPIO.output(self.latch, GPIO.HIGH)
 
 STEPPER_SEQ = [
     0b0001,
@@ -83,7 +66,7 @@ def step_motor(sequence_index, motor):
     else:
         out_byte = pattern << 4
 
-    shift.send_byte(out_byte)
+    shift.shiftByte(out_byte)
 
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     delta = target_deg - current_deg
