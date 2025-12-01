@@ -1,5 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.request # Kept for the autonomous JSON fetch
+import urllib.request
 import RPi.GPIO as GPIO
 import json
 import time
@@ -19,10 +19,6 @@ class Stepper:
     seq = [0b0001,0b0011,0b0010,0b0110,0b0100,0b1100,0b1000,0b1001]
     delay_us = 1200
     steps_per_degree = 1024/360.0
-    
-    # --- FIX 1: SHARED STATE ---
-    # This variable belongs to the Class, not the individual objects.
-    # It remembers the bits for BOTH motors.
     _shared_register = 0 
 
     def __init__(self, shifter, shifter_bit_start):
@@ -37,20 +33,9 @@ class Stepper:
 
     def __step(self, direction):
         self.step_state = (self.step_state + direction) % 8
-        
-        # --- FIX 1 (Continued): Update the shared variable ---
-        
-        # 1. Clear ONLY the bits for this specific motor (using a mask)
-        #    ~(0b1111 << start) creates a mask like 11110000 to keep the other motor's bits
         Stepper._shared_register &= ~(0b1111 << self.shifter_bit_start)
-        
-        # 2. Set the new bits for this motor
         Stepper._shared_register |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
-        
-        # 3. Send the COMBINED state to the hardware
         self.s.shiftByte(Stepper._shared_register)
-        
-        # Calculate new angle
         self.angle = (self.angle + (direction / Stepper.steps_per_degree)) % 360.0
 
     def rotate_relative(self, delta_deg):
@@ -61,8 +46,6 @@ class Stepper:
             time.sleep(Stepper.delay_us / 1e6)
 
     def go_angle(self, angle_deg):
-        # Calculate the shortest path (delta)
-        # Note: We keep the % 360 here to handle the inputs safely
         angle_deg = angle_deg % 360.0
         current = self.angle
         delta = angle_deg - current
@@ -75,7 +58,6 @@ class Stepper:
     def zero(self):
         self.angle = 0.0
         self.step_state = 0
-        # Reset only this motor's bits in the shared register
         Stepper._shared_register &= ~(0b1111 << self.shifter_bit_start)
         Stepper._shared_register |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
         self.s.shiftByte(Stepper._shared_register)
@@ -95,12 +77,9 @@ SHIFTER_CLOCK = 21
 
 shifter = Shifter(data=SHIFTER_DATA, latch=SHIFTER_LATCH, clock=SHIFTER_CLOCK)
 
-# ---------- MOTOR BIT POSITIONS ----------
 m_lr = Stepper(shifter, shifter_bit_start=4)   # Left/Right (azimuth)
 m_ud = Stepper(shifter, shifter_bit_start=0)   # Up/Down (altitude)
 
-
-# ---------- Math utilities ----------
 def deg_from_rad(x):
     return x * 180.0 / math.pi
 
@@ -108,8 +87,6 @@ def normalize_deg(a):
     a %= 360.0
     return a
 
-
-# ---------- Targeting math ----------
 def compute_target_angles(my_r, my_theta, target_r, target_theta, target_z=0.0, turret_height=0.0):
     lr_cmd = normalize_deg(deg_from_rad(target_theta))
 
@@ -126,8 +103,6 @@ def compute_target_angles(my_r, my_theta, target_r, target_theta, target_z=0.0, 
 
     return lr_cmd, ud_cmd
 
-
-# ---------- Laser firing ----------
 def fire_laser(duration_s=3.0):
     global LASER_ON
     GPIO.output(POWER_PIN, GPIO.HIGH)
@@ -136,8 +111,6 @@ def fire_laser(duration_s=3.0):
     GPIO.output(POWER_PIN, GPIO.LOW)
     LASER_ON = False
 
-
-# ---------- HTTP handler ----------
 class TurretHandler(BaseHTTPRequestHandler):
 
     def _generate_html(self, msg=""):
@@ -215,19 +188,16 @@ class TurretHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get('Content-Length',0))
         raw = self.rfile.read(length).decode('utf-8')
         
-        # Uses the new manual parsing function
         data = parsePOSTdata(raw)
 
         action = data.get('action',"")
         msg = ""
 
-        # ----- LASER -----
         if action == "toggle_laser":
             LASER_ON = not LASER_ON
             GPIO.output(POWER_PIN, GPIO.HIGH if LASER_ON else GPIO.LOW)
             msg = f"Laser toggled to {LASER_ON}"
 
-        # ----- MOVE -----
         elif action == "move_angles":
             try:
                 lr = float(data.get("lr_deg", m_lr.angle))
@@ -239,7 +209,6 @@ class TurretHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 msg = f"Move error: {e}"
 
-        # ----- ZERO -----
         elif action == "zero_motors":
             m_lr.zero()
             m_ud.zero()
@@ -247,7 +216,6 @@ class TurretHandler(BaseHTTPRequestHandler):
             GPIO.output(POWER_PIN, GPIO.LOW)
             msg = "Motors zeroed. Laser off."
 
-        # ----- AUTONOMOUS -----
         elif action == "start_autonomous":
             try:
                 url = data.get("json_url","")
@@ -288,7 +256,6 @@ class TurretHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 msg = f"Autonomous error: {e}"
 
-        # ----- UNKNOWN -----
         else:
             msg = "Unknown action."
 
@@ -297,8 +264,6 @@ class TurretHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(self._generate_html(msg).encode("utf-8"))
 
-
-# ---------- Run server ----------
 def run_server():
     httpd = HTTPServer(("",PORT), TurretHandler)
     print(f"Turret server running at http://<pi-ip>:{PORT}")
