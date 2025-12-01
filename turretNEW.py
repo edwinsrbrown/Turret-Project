@@ -19,20 +19,17 @@ class Stepper:
     seq = [0b0001,0b0011,0b0010,0b0110,0b0100,0b1100,0b1000,0b1001]
     delay_us = 1200
     steps_per_degree = 4096/360.0
+    
+    # --- FIX 1: SHARED STATE ---
+    # This variable belongs to the Class, not the individual objects.
+    # It remembers the bits for BOTH motors.
+    _shared_register = 0 
 
     def __init__(self, shifter, shifter_bit_start):
         self.s = shifter
         self.shifter_bit_start = shifter_bit_start
         self.step_state = 0
         self.angle = 0.0
-        self._register_state = 0
-
-    def _set_register(self, reg):
-        self._register_state = reg & 0xFFFFFFFF
-        self.s.shiftByte(self._register_state)
-
-    def _get_register(self):
-        return self._register_state
 
     def _sgn(self, x):
         if x == 0: return 0
@@ -40,10 +37,20 @@ class Stepper:
 
     def __step(self, direction):
         self.step_state = (self.step_state + direction) % 8
-        reg = self._get_register()
-        reg &= ~(0b1111 << self.shifter_bit_start)
-        reg |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
-        self._set_register(reg)
+        
+        # --- FIX 1 (Continued): Update the shared variable ---
+        
+        # 1. Clear ONLY the bits for this specific motor (using a mask)
+        #    ~(0b1111 << start) creates a mask like 11110000 to keep the other motor's bits
+        Stepper._shared_register &= ~(0b1111 << self.shifter_bit_start)
+        
+        # 2. Set the new bits for this motor
+        Stepper._shared_register |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
+        
+        # 3. Send the COMBINED state to the hardware
+        self.s.shiftByte(Stepper._shared_register)
+        
+        # Calculate new angle
         self.angle = (self.angle + (direction / Stepper.steps_per_degree)) % 360.0
 
     def rotate_relative(self, delta_deg):
@@ -54,6 +61,8 @@ class Stepper:
             time.sleep(Stepper.delay_us / 1e6)
 
     def go_angle(self, angle_deg):
+        # Calculate the shortest path (delta)
+        # Note: We keep the % 360 here to handle the inputs safely
         angle_deg = angle_deg % 360.0
         current = self.angle
         delta = angle_deg - current
@@ -66,10 +75,10 @@ class Stepper:
     def zero(self):
         self.angle = 0.0
         self.step_state = 0
-        reg = self._get_register()
-        reg &= ~(0b1111 << self.shifter_bit_start)
-        reg |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
-        self._set_register(reg)
+        # Reset only this motor's bits in the shared register
+        Stepper._shared_register &= ~(0b1111 << self.shifter_bit_start)
+        Stepper._shared_register |= (Stepper.seq[self.step_state] << self.shifter_bit_start)
+        self.s.shiftByte(Stepper._shared_register)
 
 PORT = 8080
 POWER_PIN = 4 #for laser
@@ -133,6 +142,9 @@ class TurretHandler(BaseHTTPRequestHandler):
 
     def _generate_html(self, msg=""):
         lr = round(m_lr.angle, 1)
+        raw_ud = m_ud.angle
+        if raw_ud > 180:
+            raw_ud -= 360
         ud = round(m_ud.angle, 1)
         laser_status = "ON" if LASER_ON else "OFF"
 
