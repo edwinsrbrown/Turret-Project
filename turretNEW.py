@@ -77,8 +77,8 @@ SHIFTER_CLOCK = 21
 
 shifter = Shifter(data=SHIFTER_DATA, latch=SHIFTER_LATCH, clock=SHIFTER_CLOCK)
 
-m_lr = Stepper(shifter, shifter_bit_start=4)   # Left/Right (azimuth)
-m_ud = Stepper(shifter, shifter_bit_start=0)   # Up/Down (altitude)
+m_lr = Stepper(shifter, shifter_bit_start=0)   # Left/Right (azimuth)
+m_ud = Stepper(shifter, shifter_bit_start=4)   # Up/Down (altitude)
 
 def deg_from_rad(x):
     return x * 180.0 / math.pi
