@@ -217,7 +217,7 @@ class TurretHandler(BaseHTTPRequestHandler):
             try:
                 url = data.get("json_url","")
                 team = str(int(data.get("team_id","1")))
-
+                print(team)
                 # Still requires urllib.request for the GET
                 with urllib.request.urlopen(url) as r:
                     j = json.loads(r.read().decode('utf-8'))
@@ -274,3 +274,4 @@ def run_server():
 
 if __name__ == "__main__":
     run_server()
+    
