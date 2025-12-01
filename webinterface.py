@@ -16,6 +16,19 @@ def parsePOSTdata(data):
             data_dict[key_val[0]] = key_val[1]
     return data_dict
 
+PORT = 8080
+POWER_PIN = 4 #for laser
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(POWER_PIN, GPIO.OUT)
+GPIO.output(POWER_PIN, GPIO.LOW)
+
+LASER_ON = False
+
+SHIFTER_DATA = 16
+SHIFTER_LATCH = 20
+SHIFTER_CLOCK = 21
+
 class TurretHandler(BaseHTTPRequestHandler):
 
     def _generate_html(self, msg=""):
