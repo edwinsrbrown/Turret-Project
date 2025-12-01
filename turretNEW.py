@@ -141,7 +141,7 @@ class TurretHandler(BaseHTTPRequestHandler):
     <h3>Manual Move</h3>
     <form method="POST">
       <label>Left / Right (deg): <span id="lrdisp">{lr}</span></label>
-      <input id="lr" name="lr_deg" type="range" min="0" max="359.9" step="0.1"
+      <input id="lr" name="lr_deg" type="range" min="-90" max="90" step="0.1"
              value="{lr}" oninput="document.getElementById('lrdisp').innerText=this.value"/>
       <br><br>
 
