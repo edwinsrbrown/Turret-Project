@@ -28,8 +28,8 @@ CLOCK_PIN = 21
 LASER_PIN = 23
 
 STEP_DELAY = 0.003
-STEPS_PER_DEG_LR = 5.68   # adjust after calibration
-STEPS_PER_DEG_UD = 5.68   # adjust after calibration
+STEPS_PER_DEG_LR = 2048/360   # adjust after calibration
+STEPS_PER_DEG_UD = 2048/360   # adjust after calibration
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
