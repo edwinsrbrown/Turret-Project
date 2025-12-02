@@ -6,10 +6,7 @@ import time
 import math
 from shifter import Shifter
 
-# -------------------------------------------------
-# USER'S PARSE FUNCTION (UNMODIFIED)
-# -------------------------------------------------
-def parsePOSTdata(data):
+def parsePOSTdata(data): # parse function from lecture
     data_dict = {}
     data_pairs = data.split('&')
     for pair in data_pairs:
@@ -18,48 +15,39 @@ def parsePOSTdata(data):
             data_dict[key_val[0]] = key_val[1]
     return data_dict
 
-# -------------------------------------------------
-# CONFIG
-# -------------------------------------------------
-DATA_PIN = 16
-LATCH_PIN = 20
-CLOCK_PIN = 21
+# pin set-up
 
-LASER_PIN = 23
-
-STEP_DELAY = 0.003
-STEPS_PER_DEG_LR = 512/360   # adjust after calibration
-STEPS_PER_DEG_UD = 512/360   # adjust after calibration
+dataPin = 16
+latchPin = 20
+clockPin = 21
+laserPin = 4
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
+#GPIO.setwarnings(False)
 
-GPIO.setup(DATA_PIN, GPIO.OUT)
-GPIO.setup(LATCH_PIN, GPIO.OUT)
-GPIO.setup(CLOCK_PIN, GPIO.OUT)
+GPIO.setup(dataPin, GPIO.OUT)
+GPIO.setup(latchPin, GPIO.OUT)
+GPIO.setup(clockPin, GPIO.OUT)
 
-GPIO.setup(LASER_PIN, GPIO.OUT)
-GPIO.output(LASER_PIN, GPIO.LOW)
+GPIO.setup(laserPin, GPIO.OUT)
+GPIO.output(laserPin, GPIO.LOW)
 
-STEPPER_SEQ = [
-    0b0001,
-    0b0011,
-    0b0010,
-    0b0110,
-    0b0100,
-    0b1100,
-    0b1000,
-    0b1001
-]
+# motor steps
+step_delay = 0.003
+lr_steps = 512/360   
+ud_steps = 512/360  
 
-shift = Shifter(DATA_PIN, LATCH_PIN, CLOCK_PIN)
+sequence = [0b0001, 0b0011, 0b0010, 0b0110, 0b0100, 0b1100, 0b1000, 0b1001] # stepper motor sequence
 
-# Motor state
+shift = Shifter(dataPin, latchPin, clockPin) #initialize shifter
+
+# initializing motor positions
 lr_pos = 0.0
 ud_pos = 0.0
 
-def step_motor(sequence_index, motor):
-    pattern = STEPPER_SEQ[sequence_index]
+# sets motors to corresponding bits (motor 0 is lower 4 bits, motor 1 is upper 4 bits)
+def step_motor(seq_index, motor): 
+    pattern = sequence[seq_index]
 
     if motor == 0:
         out_byte = pattern
@@ -71,30 +59,38 @@ def step_motor(sequence_index, motor):
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     delta = target_deg - current_deg
     steps = int(abs(delta) * steps_per_deg)
-    direction = 1 if delta > 0 else -1
 
-    seq = range(8) if direction > 0 else range(7, -1, -1)
+    #detemine if motor rotates clockwise or counter-clockwise
+    if delta > 0:
+        direction = 1
+    else:
+        direction = -1
+
+    #parse through sequence list forward or backward based on direction
+    if direction > 0:
+        seq = range(8)
+    else:
+        seq = range (7, -1, -1)
 
     for _ in range(steps):
         for i in seq:
             step_motor(i, motor)
-            time.sleep(STEP_DELAY)
+            time.sleep(step_delay)
 
     return target_deg
 
+# makes current position the "zero" position
 def zero_motor(motor):
     global lr_pos, ud_pos
     for _ in range(200):
         step_motor(0, motor)
-        time.sleep(STEP_DELAY)
+        time.sleep(step_delay)
     if motor == 0:
         lr_pos = 0.0
     else:
         ud_pos = 0.0
 
-# -------------------------------------------------
-# ANGLE CALCULATIONS
-# -------------------------------------------------
+#autonomous part
 def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
     dx = targ_r * math.cos(targ_theta) - my_r * math.cos(my_theta)
     dy = targ_r * math.sin(targ_theta) - my_r * math.sin(my_theta)
@@ -104,9 +100,7 @@ def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
 
     return lr_angle, ud_angle
 
-# -------------------------------------------------
-# HTTP SERVER
-# -------------------------------------------------
+# HTML generated with LLM assistance
 laser_status = "OFF"
 msg = ""
 
@@ -170,42 +164,45 @@ class TurretHandler(BaseHTTPRequestHandler):
 """
         self.respond(html)
 
+    # 
     def do_POST(self):
-        global laser_status, msg, lr_pos, ud_pos
+        global laser_status
+        global msg
+        global lr_pos
+        global ud_pos
 
         length = int(self.headers.get("Content-Length"))
         post_data = self.rfile.read(length).decode()
 
-        # USE THE USER'S PARSER
         data = parsePOSTdata(post_data)
 
         action = data.get("action", "")
 
         if action == "toggle_laser":
             if laser_status == "OFF":
-                GPIO.output(LASER_PIN, GPIO.HIGH)
+                GPIO.output(laserPin, GPIO.HIGH)
                 laser_status = "ON"
             else:
-                GPIO.output(LASER_PIN, GPIO.LOW)
+                GPIO.output(laserPin, GPIO.LOW)
                 laser_status = "OFF"
-            msg = "Laser toggled."
+            msg = "Laser toggled"
 
         elif action == "move_angles":
             try:
                 new_lr = float(data["lr_deg"])
                 new_ud = float(data["ud_deg"])
 
-                lr_pos = move_motor_degs(0, lr_pos, new_lr, STEPS_PER_DEG_LR)
-                ud_pos = move_motor_degs(1, ud_pos, new_ud, STEPS_PER_DEG_UD)
+                lr_pos = move_motor_degs(0, lr_pos, new_lr, lr_steps)
+                ud_pos = move_motor_degs(1, ud_pos, new_ud, ud_steps)
 
-                msg = f"Moved to LR={lr_pos:.1f}, UD={ud_pos:.1f}"
-            except:
-                msg = "Invalid angle input."
+                msg = f"Moved to LR={lr_pos:.1f} and UD={ud_pos:.1f}"
+            #except:
+                #msg = "Invalid angle input"
 
         elif action == "zero_motors":
             zero_motor(0)
             zero_motor(1)
-            msg = "Motors zeroed."
+            msg = "Motors are zeroed"
 
         elif action == "start_autonomous":
             msg = self.autonomous_sequence(data)
@@ -237,14 +234,14 @@ class TurretHandler(BaseHTTPRequestHandler):
             for (r, th, z) in targets:
                 lr_t, ud_t = compute_angles(my_r, my_theta, r, th, z)
 
-                lr_pos = move_motor_degs(0, lr_pos, lr_t, STEPS_PER_DEG_LR)
-                ud_pos = move_motor_degs(1, ud_pos, ud_t, STEPS_PER_DEG_UD)
+                lr_pos = move_motor_degs(0, lr_pos, lr_t, lr_steps)
+                ud_pos = move_motor_degs(1, ud_pos, ud_t, ud_steps)
 
-                GPIO.output(LASER_PIN, GPIO.HIGH)
+                GPIO.output(laserPin, GPIO.HIGH)
                 time.sleep(3)
-                GPIO.output(LASER_PIN, GPIO.LOW)
+                GPIO.output(laserPin, GPIO.LOW)
 
-            return "Autonomous sequence complete."
+            return "Autonomous sequence complete"
 
         except Exception as e:
             return f"Autonomous error: {e}"
@@ -255,9 +252,7 @@ class TurretHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode("utf-8"))
 
-# -------------------------------------------------
-# MAIN
-# -------------------------------------------------
+# run the code
 if __name__ == "__main__":
     try:
         server = HTTPServer(("0.0.0.0", 8080), TurretHandler)
