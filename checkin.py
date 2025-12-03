@@ -213,7 +213,7 @@ class TurretHandler(BaseHTTPRequestHandler):
             print(data)
 
         self.do_GET()
-"""
+
     def autonomous_sequence(self, data):
         global lr_pos, ud_pos
 
@@ -250,7 +250,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 
         except Exception as e:
             return f"Autonomous error: {e}"
-"""
+
     def respond(self, html):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
