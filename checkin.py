@@ -207,7 +207,7 @@ class TurretHandler(BaseHTTPRequestHandler):
         elif action == "start_autonomous":
             msg = self.autonomous_sequence(data)
 
-            with open("jsontest.json") as f:
+            with open("positions.json") as f:
                 data = json.load(f)
 
             print(data)
