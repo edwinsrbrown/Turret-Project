@@ -207,8 +207,13 @@ class TurretHandler(BaseHTTPRequestHandler):
         elif action == "start_autonomous":
             msg = self.autonomous_sequence(data)
 
-        self.do_GET()
+            with open("jsontest.json") as f:
+                data = json.load(f)
 
+            print(data)
+
+        self.do_GET()
+"""
     def autonomous_sequence(self, data):
         global lr_pos, ud_pos
 
@@ -245,7 +250,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 
         except Exception as e:
             return f"Autonomous error: {e}"
-
+"""
     def respond(self, html):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
