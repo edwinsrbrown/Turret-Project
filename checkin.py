@@ -209,8 +209,13 @@ class TurretHandler(BaseHTTPRequestHandler):
 
             with open("positions.json") as f:
                 data = json.load(f)
+                
+            my_r = data["turrets"][8]["r"]
+            my_theta = data["turrets"][8]["theta"]
 
-            print(data)
+            print("My turret location:")
+            print("r =", my_r)
+            print("theta =", my_theta)
 
         self.do_GET()
 
