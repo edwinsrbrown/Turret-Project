@@ -266,3 +266,18 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         GPIO.cleanup()
         print("Server stopped.")
+
+"""
+TEAM_ID = "1"
+URL = "http://192.168.1.254:8000/positions.json"
+
+with urllib.request.urlopen(URL) as f:
+    js = json.loads(f.read().decode())
+
+my_r = js["turrets"][TEAM_ID]["r"]
+my_theta = js["turrets"][TEAM_ID]["theta"]
+
+print("My turret location:")
+print("r =", my_r)
+print("theta =", my_theta)
+"""
