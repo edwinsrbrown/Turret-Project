@@ -240,6 +240,8 @@ class TurretHandler(BaseHTTPRequestHandler):
                 time.sleep(3)
                 GPIO.output(laserPin, GPIO.LOW)
 
+            print(targets)
+    
             return "Autonomous sequence complete"
 
         except Exception as e:
