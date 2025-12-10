@@ -89,6 +89,7 @@ def zero_motor(motor):
         lr_pos = 0.0
     else:
         ud_pos = 0.0
+    return lr_pos, ud_pos
 
 #autonomous part
 def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
