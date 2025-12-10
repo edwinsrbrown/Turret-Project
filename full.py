@@ -164,7 +164,6 @@ class TurretHandler(BaseHTTPRequestHandler):
 """
         self.respond(html)
 
-    # 
     def do_POST(self):
         global laser_status
         global msg
