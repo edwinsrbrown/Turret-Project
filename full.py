@@ -196,8 +196,8 @@ class TurretHandler(BaseHTTPRequestHandler):
                 ud_pos = move_motor_degs(1, ud_pos, new_ud, ud_steps)
 
                 msg = f"Moved to LR={lr_pos:.1f} and UD={ud_pos:.1f}"
-            #except:
-                #msg = "Invalid angle input"
+            except:
+                msg = "Invalid angle input"
 
         elif action == "zero_motors":
             zero_motor(0)
