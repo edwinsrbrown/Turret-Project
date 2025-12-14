@@ -216,6 +216,9 @@ class TurretHandler(BaseHTTPRequestHandler):
             url = data["json_url"]
             team_id = data["team_id"]
 
+            url = url.replace("%3A", ":") # fixes for parsing
+            url = url.replace("%2F", "/") #fixes for parsing
+
             with urllib.request.urlopen(url) as f:
                 js = json.loads(f.read().decode())
 
