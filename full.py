@@ -206,8 +206,11 @@ class TurretHandler(BaseHTTPRequestHandler):
 
         elif action == "start_autonomous":
             msg = self.autonomous_sequence(data)
-
-        self.do_GET()
+        
+        try:
+            self.do_GET()
+        except BrokenPipeError:
+            pass
 
     def autonomous_sequence(self, data):
         global lr_pos, ud_pos
