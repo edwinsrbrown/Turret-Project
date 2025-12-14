@@ -24,7 +24,7 @@ class JSONHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"Not found")
 
 def run_server():
-    HOST = "192.168.1.254"    # Replace with server IP address
+    HOST = "172.20.10.2"    # Replace with server IP address
     PORT = 8000
     server = HTTPServer((HOST, PORT), JSONHandler)
     server.serve_forever()
