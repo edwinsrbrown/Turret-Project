@@ -62,9 +62,9 @@ def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
 
     #detemine if motor rotates clockwise or counter-clockwise
     if delta > 0:
-        direction = 1
-    else:
         direction = -1
+    else:
+        direction = 1
 
     #parse through sequence list forward or backward based on direction
     if direction > 0:
