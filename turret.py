@@ -56,8 +56,17 @@ def step_motor(seq_index, motor):
 
     shift.shiftByte(out_byte)
 
+def shortest_angle_delta(target, current):
+    delta = target - current
+    while delta > 180:
+        delta -= 360
+    while delta < -180:
+        delta += 360
+    return delta
+
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
-    delta = target_deg - current_deg
+    target_deg = max(-90, min(90, target_deg))
+    delta = shortest_angle_delta(target_deg, current_deg)
     steps = int(abs(delta) * steps_per_deg)
 
     #detemine if motor rotates clockwise or counter-clockwise
@@ -77,7 +86,7 @@ def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
             step_motor(i, motor)
             time.sleep(step_delay)
 
-    return target_deg
+    return current_deg + delta
 
 # makes current position the "zero" position
 def zero_motor(motor):
