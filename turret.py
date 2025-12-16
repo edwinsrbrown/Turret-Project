@@ -65,23 +65,20 @@ def shortest_angle_delta(target, current):
     return delta
 
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
-    # compute desired delta
     delta = shortest_angle_delta(target_deg, current_deg)
 
-    # enforce mechanical limits BEFORE stepping
+    # mechanical safety limits
     MAX_ANGLE = 90
     desired = current_deg + delta
-
     if desired > MAX_ANGLE:
         desired = MAX_ANGLE
     elif desired < -MAX_ANGLE:
         desired = -MAX_ANGLE
 
-    # recompute delta AFTER limiting
     delta = desired - current_deg
 
-    # now compute steps from the LIMITED delta
-    steps = int(abs(delta) * steps_per_deg / 8)
+    # CORRECT step calculation (NO /8)
+    steps = int(abs(delta) * steps_per_deg)
 
     direction = -1 if delta > 0 else 1
     seq = range(8) if direction > 0 else range(7, -1, -1)
@@ -190,7 +187,7 @@ class TurretHandler(BaseHTTPRequestHandler):
       </label>
       <br><br>
       <label>Your team number:
-        <input type="text" name="team_id" value="1" size="6"/>
+        <input type="text" name="team_id" value="8" size="6"/>
       </label>
       <br><br>
       <button name="action" value="start_autonomous">Start Autonomous</button>
