@@ -251,14 +251,17 @@ class TurretHandler(BaseHTTPRequestHandler):
                 targets.append((gl["r"], gl["theta"], gl["z"]))
 
             for (r, th, z) in targets:
+
                 lr_t, ud_t = compute_angles(my_r, my_theta, r, th, z)
 
                 lr_pos = move_motor_degs(0, lr_pos, lr_t, lr_steps)
                 ud_pos = move_motor_degs(1, ud_pos, ud_t, ud_steps)
 
+                time.sleep(0.5)
                 GPIO.output(laserPin, GPIO.HIGH)
                 time.sleep(3)
                 GPIO.output(laserPin, GPIO.LOW)
+                time.sleep(0.5)
 
             print(targets)
     
