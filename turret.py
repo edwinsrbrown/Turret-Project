@@ -67,7 +67,7 @@ def shortest_angle_delta(target, current):
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     target_deg = max(-90, min(90, target_deg))
     delta = shortest_angle_delta(target_deg, current_deg)
-    steps = int(abs(delta) * steps_per_deg)
+    steps = int(abs(delta) * steps_per_deg / 8)
 
     #detemine if motor rotates clockwise or counter-clockwise
     if delta > 0:
