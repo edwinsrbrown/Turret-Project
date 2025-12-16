@@ -65,15 +65,22 @@ def shortest_angle_delta(target, current):
     return delta
 
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
+    # compute desired delta
     delta = shortest_angle_delta(target_deg, current_deg)
 
-    # soft safety limits
+    # enforce mechanical limits BEFORE stepping
     MAX_ANGLE = 90
-    if current_deg + delta > MAX_ANGLE:
-        delta = MAX_ANGLE - current_deg
-    elif current_deg + delta < -MAX_ANGLE:
-        delta = -MAX_ANGLE - current_deg
+    desired = current_deg + delta
 
+    if desired > MAX_ANGLE:
+        desired = MAX_ANGLE
+    elif desired < -MAX_ANGLE:
+        desired = -MAX_ANGLE
+
+    # recompute delta AFTER limiting
+    delta = desired - current_deg
+
+    # now compute steps from the LIMITED delta
     steps = int(abs(delta) * steps_per_deg / 8)
 
     direction = -1 if delta > 0 else 1
