@@ -65,21 +65,19 @@ def shortest_angle_delta(target, current):
     return delta
 
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
-    #target_deg = max(-90, min(90, target_deg))
     delta = shortest_angle_delta(target_deg, current_deg)
+
+    # soft safety limits
+    MAX_ANGLE = 90
+    if current_deg + delta > MAX_ANGLE:
+        delta = MAX_ANGLE - current_deg
+    elif current_deg + delta < -MAX_ANGLE:
+        delta = -MAX_ANGLE - current_deg
+
     steps = int(abs(delta) * steps_per_deg / 8)
 
-    #detemine if motor rotates clockwise or counter-clockwise
-    if delta > 0:
-        direction = -1
-    else:
-        direction = 1
-
-    #parse through sequence list forward or backward based on direction
-    if direction > 0:
-        seq = range(8)
-    else:
-        seq = range (7, -1, -1)
+    direction = -1 if delta > 0 else 1
+    seq = range(8) if direction > 0 else range(7, -1, -1)
 
     for _ in range(steps):
         for i in seq:
