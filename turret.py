@@ -105,10 +105,23 @@ def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
     dx = targ_r * math.cos(targ_theta) - my_r * math.cos(my_theta)
     dy = targ_r * math.sin(targ_theta) - my_r * math.sin(my_theta)
 
-    lr_angle = math.degrees(math.atan2(dy, dx))
-    ud_angle = math.degrees(math.atan2(targ_z, math.sqrt(dx*dx + dy*dy)))
+    # global bearing to target
+    lr_global = math.degrees(math.atan2(dy, dx))
 
-    return lr_angle, ud_angle
+    # convert to turret-relative bearing
+    lr_relative = lr_global - math.degrees(my_theta)
+
+    # wrap to [-180, 180]
+    while lr_relative > 180:
+        lr_relative -= 360
+    while lr_relative < -180:
+        lr_relative += 360
+
+    ud_angle = math.degrees(
+        math.atan2(targ_z, math.sqrt(dx*dx + dy*dy))
+    )
+
+    return lr_relative, ud_angle
 
 # HTML generated with LLM assistance
 laser_status = "OFF"
