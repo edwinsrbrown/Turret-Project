@@ -96,7 +96,7 @@ def zero_motor(motor):
 
 #autonomous part
 def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
-    # --- Convert polar → Cartesian ---
+    # polar to cartesian
     xm = my_r * math.cos(my_theta)
     ym = my_r * math.sin(my_theta)
 
@@ -106,22 +106,22 @@ def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
     dx = xt - xm
     dy = yt - ym
 
-    # --- Global bearing from +x axis ---
+    # global bearing from +x axis
     bearing = math.degrees(math.atan2(dy, dx))
 
-    # --- Turret forward direction (pointing toward origin) ---
+    # turret forward direction (pointing towards origin)
     forward = math.degrees(my_theta) + 180.0
 
-    # --- Turret-relative left/right angle ---
+    # turret relative left/right angle
     lr_angle = bearing - forward
 
-    # Wrap to [-180, 180]
+    # wrap to -180 to +180
     while lr_angle > 180:
         lr_angle -= 360
     while lr_angle < -180:
         lr_angle += 360
 
-    # --- Up/down angle ---
+    # up/down angle
     ud_angle = math.degrees(
         math.atan2(targ_z, math.sqrt(dx*dx + dy*dy))
     )
