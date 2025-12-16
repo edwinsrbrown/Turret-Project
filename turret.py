@@ -67,8 +67,8 @@ def shortest_angle_delta(target, current):
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     delta = shortest_angle_delta(target_deg, current_deg)
 
-    MAX_ANGLE = 90
-    desired = max(-MAX_ANGLE, min(MAX_ANGLE, current_deg + delta))
+    max_angle = 90
+    desired = max(-max_angle, min(max_angle, current_deg + delta))
     delta = desired - current_deg
 
     steps = int(abs(delta) * steps_per_deg)
