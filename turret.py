@@ -80,7 +80,7 @@ def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     if direction > 0:
         seq = range(8)
     else:
-        range(7, -1, -1)
+        seq = range(7, -1, -1)
 
     #steps motor one step at a time
     for i in range(steps):
