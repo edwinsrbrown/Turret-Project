@@ -113,7 +113,7 @@ def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
     forward = math.degrees(my_theta) + 180.0
 
     # turret relative left/right angle
-    lr_angle = bearing - forward
+    lr_angle = forward - bearing
 
     # wrap to -180 to +180
     while lr_angle > 180:
