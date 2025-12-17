@@ -290,5 +290,6 @@ class TurretHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     try:
         HTTPServer(("0.0.0.0", 8080), TurretHandler).serve_forever()
+        print("Now running on port 8080")
     except KeyboardInterrupt:
         GPIO.cleanup()
