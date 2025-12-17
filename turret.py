@@ -256,7 +256,9 @@ class TurretHandler(BaseHTTPRequestHandler):
             msg = "Motors are zeroed"
 
         elif action == "start_autonomous":
-            msg = self.autonomous_sequence(data)
+            msg = "Autonomous running"
+            self.respond("Autonomous started")
+            self.autonomous_sequence(data)
             return
         
         try:
