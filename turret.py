@@ -156,14 +156,28 @@ class TurretHandler(BaseHTTPRequestHandler):
 
     <h3>Manual Move</h3>
     <form method="POST">
-      <label>Left / Right (deg): <span id="lrdisp">{lr_pos}</span></label>
+      <label>
+        Left / Right (deg):
+        <span id="lrdisp"
+              style="display:inline-block; width:60px; text-align:right;">
+          {lr_pos:.1f}
+        </span>
+      </label>
       <input id="lr" name="lr_deg" type="range" min="-90" max="90" step="0.1"
-             value="{lr_pos}" oninput="document.getElementById('lrdisp').innerText=this.value"/>
+             value="{lr_pos}"
+             oninput="document.getElementById('lrdisp').innerText=this.value"/>
       <br><br>
 
-      <label>Up / Down (deg): <span id="uddisp">{ud_pos}</span></label>
+      <label>
+        Up / Down (deg):
+        <span id="uddisp"
+              style="display:inline-block; width:60px; text-align:right;">
+          {ud_pos:.1f}
+        </span>
+      </label>
       <input id="ud" name="ud_deg" type="range" min="-90" max="90" step="0.1"
-             value="{ud_pos}" oninput="document.getElementById('uddisp').innerText=this.value"/>
+             value="{ud_pos}"
+             oninput="document.getElementById('uddisp').innerText=this.value"/>
       <br><br>
 
       <button name="action" value="move_angles">Move to Angles</button>
@@ -175,7 +189,9 @@ class TurretHandler(BaseHTTPRequestHandler):
     <h3>Autonomous Targeting</h3>
     <form method="POST">
       <label>positions.json URL:
-        <input type="text" name="json_url" value="http://192.168.1.254:8000/positions.json" size="50"/>
+        <input type="text" name="json_url"
+               value="http://192.168.1.254:8000/positions.json"
+               size="50"/>
       </label>
       <br><br>
       <label>Your team number:
@@ -191,6 +207,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 </html>
 """
         self.respond(html)
+
 
     def do_POST(self):
         global laser_status
