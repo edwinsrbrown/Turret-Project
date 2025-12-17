@@ -257,7 +257,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 
         elif action == "start_autonomous":
             msg = "Autonomous running"
-            self.respond("Autonomous started")
+            self.do_GET()
             self.autonomous_sequence(data)
             return
         
