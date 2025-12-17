@@ -1,3 +1,4 @@
+#imports
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.request
 import RPi.GPIO as GPIO
@@ -16,30 +17,26 @@ def parsePOSTdata(data): # parse function from lecture
     return data_dict
 
 # pin set-up
-
 dataPin = 16
 latchPin = 20
 clockPin = 21
 laserPin = 4
 
 GPIO.setmode(GPIO.BCM)
-#GPIO.setwarnings(False)
-
 GPIO.setup(dataPin, GPIO.OUT)
 GPIO.setup(latchPin, GPIO.OUT)
 GPIO.setup(clockPin, GPIO.OUT)
-
 GPIO.setup(laserPin, GPIO.OUT)
 GPIO.output(laserPin, GPIO.LOW)
 
 # motor steps
 step_delay = 0.003
-lr_steps = 4096/360   
-ud_steps = 4096/360  
+lr_steps = 4096/360  #conversion for left/right motor
+ud_steps = 4096/360  #conversion for up/down motor
 
 sequence = [0b0001, 0b0011, 0b0010, 0b0110, 0b0100, 0b1100, 0b1000, 0b1001] # stepper motor sequence
 
-shift = Shifter(dataPin, latchPin, clockPin) #initialize shifter
+shift = Shifter(dataPin, latchPin, clockPin) #initialize shifter object
 
 # initializing motor positions
 lr_pos = 0.0
@@ -47,17 +44,18 @@ ud_pos = 0.0
 
 # sets motors to corresponding bits (motor 0 is lower 4 bits, motor 1 is upper 4 bits)
 def step_motor(seq_index, motor): 
-    pattern = sequence[seq_index]
+    pattern = sequence[seq_index] #picks pattern from step sequence
 
     if motor == 0:
         out_byte = pattern
     else:
         out_byte = pattern << 4
 
-    shift.shiftByte(out_byte)
+    shift.shiftByte(out_byte) #send 8 bits to the shift register
 
 def shortest_angle_delta(target, current):
     delta = target - current
+    #wrap angles so motor never rotates past +/- 180 degrees
     while delta > 180:
         delta -= 360
     while delta < -180:
@@ -65,17 +63,26 @@ def shortest_angle_delta(target, current):
     return delta
 
 def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
-    delta = shortest_angle_delta(target_deg, current_deg)
+    delta = shortest_angle_delta(target_deg, current_deg) #shortest rotation direction
 
-    max_angle = 90
-    desired = max(-max_angle, min(max_angle, current_deg + delta))
-    delta = desired - current_deg
+    max_angle = 90 #motor can't go past 90 degrees either way
+    desired = max(-max_angle, min(max_angle, current_deg + delta)) #clamps angle to +/- 90 degrees
+    delta = desired - current_deg #new angle that is clamped
 
     steps = int(abs(delta) * steps_per_deg)
 
-    direction = 1 if delta < 0 else -1
-    seq = range(8) if direction > 0 else range(7, -1, -1)
+    #rotation direction
+    if delta < 0:
+        direction = 1
+    else:
+        direction = -1
+    #forward or reverse stepping order
+    if direction > 0:
+        seq = range(8)
+    else:
+        range(7, -1, -1)
 
+    #steps motor one step at a time
     for i in range(steps):
         step_motor(seq[i % 8], motor)
         time.sleep(step_delay)
@@ -96,24 +103,26 @@ def zero_motor(motor):
 
 #autonomous part
 def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
-    # polar to cartesian
+    #polar to cartesian for my turret position
     xm = my_r * math.cos(my_theta)
     ym = my_r * math.sin(my_theta)
 
+    #polar to cartesian for target turret position
     xt = targ_r * math.cos(targ_theta)
     yt = targ_r * math.sin(targ_theta)
 
+    #x and y vectors from my turret to target turret
     dx = xt - xm
     dy = yt - ym
 
-    # global bearing from +x axis
-    bearing = math.degrees(math.atan2(dy, dx))
+    #absolute angle to target
+    abs_angle = math.degrees(math.atan2(dy, dx))
 
-    # turret forward direction (pointing towards origin)
+    #my turret's facing direction
     forward = math.degrees(my_theta) + 180.0
 
-    # turret relative left/right angle
-    lr_angle = forward - bearing
+    # left/right motor angle
+    lr_angle = forward - abs_angle
 
     # wrap to -180 to +180
     while lr_angle > 180:
@@ -134,6 +143,7 @@ msg = ""
 
 class TurretHandler(BaseHTTPRequestHandler):
 
+    #sends the HTML page to display laser state, sliders, and autonomous functions
     def do_GET(self):
         global lr_pos, ud_pos, laser_status
 
@@ -208,7 +218,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 """
         self.respond(html)
 
-
+    #runs when buttons are clicked
     def do_POST(self):
         global laser_status
         global msg
@@ -220,7 +230,7 @@ class TurretHandler(BaseHTTPRequestHandler):
 
         data = parsePOSTdata(post_data)
 
-        action = data.get("action", "")
+        action = data.get("action", "") #determines which button was clicked and assigns action to variable
 
         if action == "toggle_laser":
             if laser_status == "OFF":
@@ -232,16 +242,13 @@ class TurretHandler(BaseHTTPRequestHandler):
             msg = "Laser toggled"
 
         elif action == "move_angles":
-            try:
-                new_lr = float(data["lr_deg"])
-                new_ud = float(data["ud_deg"])
+            new_lr = float(data["lr_deg"])
+            new_ud = float(data["ud_deg"])
 
-                lr_pos = move_motor_degs(0, lr_pos, new_lr, lr_steps)
-                ud_pos = move_motor_degs(1, ud_pos, new_ud, ud_steps)
+            lr_pos = move_motor_degs(0, lr_pos, new_lr, lr_steps)
+            ud_pos = move_motor_degs(1, ud_pos, new_ud, ud_steps)
 
-                msg = f"Moved to LR={lr_pos:.1f} and UD={ud_pos:.1f}"
-            except:
-                msg = "Invalid angle input"
+            msg = f"Moved to LR={lr_pos:.1f} and UD={ud_pos:.1f}"
 
         elif action == "zero_motors":
             zero_motor(0)
@@ -266,6 +273,7 @@ class TurretHandler(BaseHTTPRequestHandler):
             url = url.replace("%3A", ":") # fixes for parsing
             url = url.replace("%2F", "/") #fixes for parsing
 
+            #downloads the position.json file
             with urllib.request.urlopen(url) as f:
                 js = json.loads(f.read().decode())
 
@@ -275,8 +283,9 @@ class TurretHandler(BaseHTTPRequestHandler):
             targets = []
 
             for tid, vals in js["turrets"].items():
-                if tid != team_id:
-                    targets.append((vals["r"], vals["theta"], 0))
+                if tid = team_id:
+                    continue
+                targets.append((vals["r"], vals["theta"], 0))
 
             for gl in js["globes"]:
                 targets.append((gl["r"], gl["theta"], gl["z"]))
