@@ -130,6 +130,7 @@ class TurretHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global lr_pos, ud_pos, laser_status, autonomous_running
 
+# HTML generated with LLM assistance
         html = f"""
 <!DOCTYPE html>
 <html>
@@ -287,9 +288,12 @@ class TurretHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode("utf-8"))
 
+# run the code
 if __name__ == "__main__":
     try:
-        HTTPServer(("0.0.0.0", 8080), TurretHandler).serve_forever()
-        print("Now running on port 8080")
+        server = HTTPServer(("0.0.0.0", 8080), TurretHandler)
+        print("Serving on port 8080...")
+        server.serve_forever()
     except KeyboardInterrupt:
         GPIO.cleanup()
+        print("Server stopped.")
