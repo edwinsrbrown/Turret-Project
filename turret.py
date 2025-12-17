@@ -283,7 +283,7 @@ class TurretHandler(BaseHTTPRequestHandler):
             targets = []
 
             for tid, vals in js["turrets"].items():
-                if tid = team_id:
+                if tid == team_id:
                     continue
                 targets.append((vals["r"], vals["theta"], 0))
 
