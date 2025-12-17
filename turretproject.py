@@ -76,11 +76,8 @@ def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     seq = range(8) if direction > 0 else range(7, -1, -1)
 
     for i in range(steps):
-        # ===== ADDED (mid-move stop) =====
         if autonomous_stop:
             return current_deg
-        # =================================
-
         step_motor(seq[i % 8], motor)
         time.sleep(step_delay)
 
@@ -130,7 +127,6 @@ class TurretHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global lr_pos, ud_pos, laser_status, autonomous_running
 
-# HTML generated with LLM assistance
         html = f"""
 <!DOCTYPE html>
 <html>
@@ -159,22 +155,28 @@ class TurretHandler(BaseHTTPRequestHandler):
     <form method="POST">
       <label>
         Left / Right (deg):
-        <span style="display:inline-block; width:60px; text-align:right;">
+        <span id="lrdisp"
+              style="display:inline-block; width:60px; text-align:right;">
           {lr_pos:.1f}
         </span>
       </label>
-      <input name="lr_deg" type="range" min="-90" max="90" step="0.1"
-             value="{lr_pos}">
+      <input id="lr" name="lr_deg" type="range"
+             min="-90" max="90" step="0.1"
+             value="{lr_pos}"
+             oninput="document.getElementById('lrdisp').innerText=parseFloat(this.value).toFixed(1)">
       <br><br>
 
       <label>
         Up / Down (deg):
-        <span style="display:inline-block; width:60px; text-align:right;">
+        <span id="uddisp"
+              style="display:inline-block; width:60px; text-align:right;">
           {ud_pos:.1f}
         </span>
       </label>
-      <input name="ud_deg" type="range" min="-90" max="90" step="0.1"
-             value="{ud_pos}">
+      <input id="ud" name="ud_deg" type="range"
+             min="-90" max="90" step="0.1"
+             value="{ud_pos}"
+             oninput="document.getElementById('uddisp').innerText=parseFloat(this.value).toFixed(1)">
       <br><br>
 
       <button name="action" value="move_angles">Move to Angles</button>
@@ -288,7 +290,6 @@ class TurretHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode("utf-8"))
 
-# run the code
 if __name__ == "__main__":
     try:
         server = HTTPServer(("0.0.0.0", 8080), TurretHandler)
