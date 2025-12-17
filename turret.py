@@ -37,23 +37,21 @@ step_delay = 0.003
 lr_steps = 4096/360   
 ud_steps = 4096/360  
 
-sequence = [0b0001, 0b0011, 0b0010, 0b0110, 0b0100, 0b1100, 0b1000, 0b1001] # stepper motor sequence
+sequence = [0b0001, 0b0011, 0b0010, 0b0110,
+            0b0100, 0b1100, 0b1000, 0b1001]
 
-shift = Shifter(dataPin, latchPin, clockPin) #initialize shifter
+shift = Shifter(dataPin, latchPin, clockPin)
 
 # initializing motor positions
 lr_pos = 0.0
 ud_pos = 0.0
 
-# sets motors to corresponding bits (motor 0 is lower 4 bits, motor 1 is upper 4 bits)
+# >>> ADDED <<< stop flag
+autonomous_stop = False
+
 def step_motor(seq_index, motor): 
     pattern = sequence[seq_index]
-
-    if motor == 0:
-        out_byte = pattern
-    else:
-        out_byte = pattern << 4
-
+    out_byte = pattern if motor == 0 else pattern << 4
     shift.shiftByte(out_byte)
 
 def shortest_angle_delta(target, current):
@@ -72,17 +70,19 @@ def move_motor_degs(motor, current_deg, target_deg, steps_per_deg):
     delta = desired - current_deg
 
     steps = int(abs(delta) * steps_per_deg)
-
     direction = 1 if delta < 0 else -1
     seq = range(8) if direction > 0 else range(7, -1, -1)
 
     for i in range(steps):
+        # >>> ADDED <<< mid-move stop
+        if autonomous_stop:
+            return current_deg
+
         step_motor(seq[i % 8], motor)
         time.sleep(step_delay)
 
     return current_deg + delta
 
-# makes current position the "zero" position
 def zero_motor(motor):
     global lr_pos, ud_pos
     for _ in range(200):
@@ -94,9 +94,7 @@ def zero_motor(motor):
         ud_pos = 0.0
     return lr_pos, ud_pos
 
-#autonomous part
 def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
-    # polar to cartesian
     xm = my_r * math.cos(my_theta)
     ym = my_r * math.sin(my_theta)
 
@@ -106,29 +104,21 @@ def compute_angles(my_r, my_theta, targ_r, targ_theta, targ_z=0):
     dx = xt - xm
     dy = yt - ym
 
-    # global bearing from +x axis
     bearing = math.degrees(math.atan2(dy, dx))
-
-    # turret forward direction (pointing towards origin)
     forward = math.degrees(my_theta) + 180.0
-
-    # turret relative left/right angle
     lr_angle = forward - bearing
 
-    # wrap to -180 to +180
     while lr_angle > 180:
         lr_angle -= 360
     while lr_angle < -180:
         lr_angle += 360
 
-    # up/down angle
     ud_angle = math.degrees(
         math.atan2(targ_z, math.sqrt(dx*dx + dy*dy))
     )
 
     return lr_angle, ud_angle
 
-# HTML generated with LLM assistance
 laser_status = "OFF"
 msg = ""
 
@@ -201,6 +191,14 @@ class TurretHandler(BaseHTTPRequestHandler):
       <button name="action" value="start_autonomous">Start Autonomous</button>
     </form>
 
+    <!-- >>> ADDED <<< -->
+    <form method="POST">
+      <button name="action" value="stop_autonomous"
+              style="background-color:#c00;color:white;">
+        STOP Autonomous
+      </button>
+    </form>
+
     <hr>
     <p>{msg}</p>
 </body>
@@ -208,63 +206,48 @@ class TurretHandler(BaseHTTPRequestHandler):
 """
         self.respond(html)
 
-
     def do_POST(self):
-        global laser_status
-        global msg
-        global lr_pos
-        global ud_pos
+        global laser_status, msg, lr_pos, ud_pos, autonomous_stop
 
         length = int(self.headers.get("Content-Length"))
-        post_data = self.rfile.read(length).decode()
-
-        data = parsePOSTdata(post_data)
-
+        data = parsePOSTdata(self.rfile.read(length).decode())
         action = data.get("action", "")
 
         if action == "toggle_laser":
-            if laser_status == "OFF":
-                GPIO.output(laserPin, GPIO.HIGH)
-                laser_status = "ON"
-            else:
-                GPIO.output(laserPin, GPIO.LOW)
-                laser_status = "OFF"
+            laser_status = "OFF" if laser_status == "ON" else "ON"
+            GPIO.output(laserPin,
+                        GPIO.HIGH if laser_status == "ON" else GPIO.LOW)
             msg = "Laser toggled"
 
         elif action == "move_angles":
-            try:
-                new_lr = float(data["lr_deg"])
-                new_ud = float(data["ud_deg"])
-
-                lr_pos = move_motor_degs(0, lr_pos, new_lr, lr_steps)
-                ud_pos = move_motor_degs(1, ud_pos, new_ud, ud_steps)
-
-                msg = f"Moved to LR={lr_pos:.1f} and UD={ud_pos:.1f}"
-            except:
-                msg = "Invalid angle input"
+            lr_pos = move_motor_degs(0, lr_pos, float(data["lr_deg"]), lr_steps)
+            ud_pos = move_motor_degs(1, ud_pos, float(data["ud_deg"]), ud_steps)
+            msg = "Manual move complete"
 
         elif action == "zero_motors":
             zero_motor(0)
             zero_motor(1)
-            msg = "Motors are zeroed"
+            msg = "Motors zeroed"
 
         elif action == "start_autonomous":
+            autonomous_stop = False  # >>> ADDED <<<
             msg = self.autonomous_sequence(data)
-        
-        try:
-            self.do_GET()
-        except BrokenPipeError:
-            pass
+
+        elif action == "stop_autonomous":
+            autonomous_stop = True   # >>> ADDED <<<
+            msg = "Autonomous stop requested"
+
+        self.do_GET()
 
     def autonomous_sequence(self, data):
-        global lr_pos, ud_pos
+        global lr_pos, ud_pos, autonomous_stop
 
         try:
             url = data["json_url"]
             team_id = data["team_id"]
 
-            url = url.replace("%3A", ":") # fixes for parsing
-            url = url.replace("%2F", "/") #fixes for parsing
+            url = url.replace("%3A", ":")
+            url = url.replace("%2F", "/")
 
             with urllib.request.urlopen(url) as f:
                 js = json.loads(f.read().decode())
@@ -283,10 +266,18 @@ class TurretHandler(BaseHTTPRequestHandler):
 
             for (r, th, z) in targets:
 
+                # >>> ADDED <<< stop check
+                if autonomous_stop:
+                    return "Autonomous stopped"
+
                 lr_t, ud_t = compute_angles(my_r, my_theta, r, th, z)
 
                 lr_pos = move_motor_degs(0, lr_pos, lr_t, lr_steps)
                 ud_pos = move_motor_degs(1, ud_pos, ud_t, ud_steps)
+
+                # >>> ADDED <<< stop check
+                if autonomous_stop:
+                    return "Autonomous stopped"
 
                 time.sleep(0.5)
                 GPIO.output(laserPin, GPIO.HIGH)
@@ -295,7 +286,7 @@ class TurretHandler(BaseHTTPRequestHandler):
                 time.sleep(0.5)
 
             print(targets)
-    
+
             return "Autonomous sequence complete"
 
         except Exception as e:
@@ -307,7 +298,6 @@ class TurretHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(html.encode("utf-8"))
 
-# run the code
 if __name__ == "__main__":
     try:
         server = HTTPServer(("0.0.0.0", 8080), TurretHandler)
